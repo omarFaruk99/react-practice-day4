@@ -6,6 +6,7 @@ import { Toast } from "primereact/toast";
 import React, { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../GlobalProvider/GlobalProvider";
+import useStore from "../layout/useStore";
 
 const SignIn: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ const SignIn: React.FC = () => {
   const navigate = useNavigate();
   const toast = useRef<Toast>(null);
   const { data } = useContext(AuthContext);
+  const { setCurrentUser } = useStore().data;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,8 +51,9 @@ const SignIn: React.FC = () => {
         email: user.email,
       };
 
-      // Store user session in localStorage
+      // Store user session in localStorage and global state
       localStorage.setItem("currentUser", JSON.stringify(userSession));
+      setCurrentUser(userSession);
 
       // Set access token (as per your existing context structure)
       data.setAccessToken(btoa(user.email)); // Using email as base64 token for demo

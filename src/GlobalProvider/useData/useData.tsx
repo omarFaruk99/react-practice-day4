@@ -1,106 +1,117 @@
-import  {useState} from 'react';
-import {Breadcrumb, LayoutConfig, LayoutState} from "../../../types";
+import { useState } from "react";
+import { Breadcrumb, LayoutConfig, LayoutState } from "../../../types";
+
+interface UserProfile {
+  id: number;
+  name: string;
+  email: string;
+}
 
 const UseData = () => {
-    const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([]);
-    const [layoutConfig, setLayoutConfig] = useState<LayoutConfig>({
-        ripple: true,
-        inputStyle: "outlined",
-        menuMode: "static",
-        menuTheme: "colorScheme",
-        colorScheme: "light",
-        theme: "cyan",
-        scale: 14,
-    });
+  const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([]);
+  const [layoutConfig, setLayoutConfig] = useState<LayoutConfig>({
+    ripple: true,
+    inputStyle: "outlined",
+    menuMode: "static",
+    menuTheme: "colorScheme",
+    colorScheme: "light",
+    theme: "cyan",
+    scale: 14,
+  });
 
-    const [accessToken, setAccessToken] = useState<string>("my token")
-    const [layoutState, setLayoutState] = useState<LayoutState>({
-        staticMenuDesktopInactive: false,
-        overlayMenuActive: false,
-        overlaySubmenuActive: false,
-        profileSidebarVisible: false,
-        configSidebarVisible: false,
-        staticMenuMobileActive: false,
-        menuHoverActive: false,
-        resetMenu: false,
-        sidebarActive: false,
-        anchored: false,
-    });
+  const [accessToken, setAccessToken] = useState<string>("my token");
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
+    const saved = localStorage.getItem("currentUser");
+    return saved ? JSON.parse(saved) : null;
+  });
 
-    const onMenuToggle = () => {
-        if (isOverlay()) {
-            setLayoutState((prevLayoutState) => ({
-                ...prevLayoutState,
-                overlayMenuActive: !prevLayoutState.overlayMenuActive,
-            }));
-        }
+  const [layoutState, setLayoutState] = useState<LayoutState>({
+    staticMenuDesktopInactive: false,
+    overlayMenuActive: false,
+    overlaySubmenuActive: false,
+    profileSidebarVisible: false,
+    configSidebarVisible: false,
+    staticMenuMobileActive: false,
+    menuHoverActive: false,
+    resetMenu: false,
+    sidebarActive: false,
+    anchored: false,
+  });
 
-        if (isDesktop()) {
-            setLayoutState((prevLayoutState) => ({
-                ...prevLayoutState,
-                staticMenuDesktopInactive:
-                    !prevLayoutState.staticMenuDesktopInactive,
-            }));
-        } else {
-            setLayoutState((prevLayoutState) => ({
-                ...prevLayoutState,
-                staticMenuMobileActive: !prevLayoutState.staticMenuMobileActive,
-            }));
-        }
-    };
+  const onMenuToggle = () => {
+    if (isOverlay()) {
+      setLayoutState((prevLayoutState) => ({
+        ...prevLayoutState,
+        overlayMenuActive: !prevLayoutState.overlayMenuActive,
+      }));
+    }
 
-    const showConfigSidebar = () => {
-        setLayoutState((prevLayoutState) => ({
-            ...prevLayoutState,
-            configSidebarVisible: true,
-        }));
-    };
+    if (isDesktop()) {
+      setLayoutState((prevLayoutState) => ({
+        ...prevLayoutState,
+        staticMenuDesktopInactive: !prevLayoutState.staticMenuDesktopInactive,
+      }));
+    } else {
+      setLayoutState((prevLayoutState) => ({
+        ...prevLayoutState,
+        staticMenuMobileActive: !prevLayoutState.staticMenuMobileActive,
+      }));
+    }
+  };
 
-    const showProfileSidebar = () => {
-        setLayoutState((prevLayoutState) => ({
-            ...prevLayoutState,
-            profileSidebarVisible: !prevLayoutState.profileSidebarVisible,
-        }));
-    };
+  const showConfigSidebar = () => {
+    setLayoutState((prevLayoutState) => ({
+      ...prevLayoutState,
+      configSidebarVisible: true,
+    }));
+  };
 
-    const isOverlay = () => {
-        return layoutConfig.menuMode === "overlay";
-    };
+  const showProfileSidebar = () => {
+    setLayoutState((prevLayoutState) => ({
+      ...prevLayoutState,
+      profileSidebarVisible: !prevLayoutState.profileSidebarVisible,
+    }));
+  };
 
-    const isSlim = () => {
-        return layoutConfig.menuMode === "slim";
-    };
+  const isOverlay = () => {
+    return layoutConfig.menuMode === "overlay";
+  };
 
-    const isSlimPlus = () => {
-        return layoutConfig.menuMode === "slim-plus";
-    };
+  const isSlim = () => {
+    return layoutConfig.menuMode === "slim";
+  };
 
-    const isHorizontal = () => {
-        return layoutConfig.menuMode === "horizontal";
-    };
+  const isSlimPlus = () => {
+    return layoutConfig.menuMode === "slim-plus";
+  };
 
-    const isDesktop = () => {
-        return window.innerWidth > 991;
-    };
+  const isHorizontal = () => {
+    return layoutConfig.menuMode === "horizontal";
+  };
 
+  const isDesktop = () => {
+    return window.innerWidth > 991;
+  };
 
-    return {
-        layoutConfig,
-        setLayoutConfig,
-        layoutState,
-        setLayoutState,
-        onMenuToggle,
-        showConfigSidebar,
-        showProfileSidebar,
-        isSlim,
-        isSlimPlus,
-        isHorizontal,
-        isDesktop,
-        breadcrumbs,
-        setBreadcrumbs,
-        accessToken,
-        setAccessToken
-    };
+  return {
+    layoutConfig,
+    setLayoutConfig,
+    layoutState,
+    setLayoutState,
+    onMenuToggle,
+    showConfigSidebar,
+    showProfileSidebar,
+    isSlim,
+    isSlimPlus,
+    isHorizontal,
+    isDesktop,
+    breadcrumbs,
+    setBreadcrumbs,
+    accessToken,
+    setAccessToken,
+    currentUser,
+    setCurrentUser,
+  };
 };
 
 export default UseData;

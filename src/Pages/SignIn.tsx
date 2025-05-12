@@ -62,9 +62,9 @@ const SignIn: React.FC = () => {
         life: 3000,
       });
 
-      // Redirect to home page
+      // Redirect to profile page
       setTimeout(() => {
-        navigate("/");
+        navigate("/profile");
       }, 1500);
     } catch (error: any) {
       toast.current?.show({

@@ -59,7 +59,7 @@ const SignUp: React.FC = () => {
 
       // Redirect to login after successful registration
       setTimeout(() => {
-        navigate("/login");
+        navigate("/signin");
       }, 2000);
     } catch (error: any) {
       toast.current?.show({
@@ -142,7 +142,7 @@ const SignUp: React.FC = () => {
             <Button
               label="Sign In"
               className="p-button-text p-button-plain"
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/signin")}
             />
           </div>
         </form>

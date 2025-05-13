@@ -34,7 +34,12 @@ const SignUp: React.FC = () => {
         throw new Error("Password must be at least 6 characters");
       }
 
-      // Store in localStorage
+      // Password must contain at least one capital letter
+      if (!/[A-Z]/.test(formData.password)) {
+        throw new Error("Password must contain at least one capital letter");
+      }
+
+      // Get existing users
       const users = JSON.parse(localStorage.getItem("users") || "[]");
 
       // Check if email already exists
@@ -42,18 +47,23 @@ const SignUp: React.FC = () => {
         throw new Error("Email already registered");
       }
 
-      users.push({
+      // Create new user with role
+      const newUser = {
         id: Date.now(),
-        ...formData,
-        password: btoa(formData.password), // Basic encoding (not for production)
-      });
+        name: formData.name,
+        email: formData.email,
+        role: "user" as const,
+        password: btoa(formData.password),
+      };
 
+      // Add new user to the list
+      users.push(newUser);
       localStorage.setItem("users", JSON.stringify(users));
 
       toast.current?.show({
         severity: "success",
         summary: "Success",
-        detail: "Registration successful!",
+        detail: "Registration successful! Please sign in.",
         life: 3000,
       });
 
@@ -126,6 +136,10 @@ const SignUp: React.FC = () => {
               />
               <label htmlFor="password">Password</label>
             </span>
+            <small className="text-500">
+              Password must be at least 6 characters and contain at least one
+              capital letter
+            </small>
           </div>
 
           <Button

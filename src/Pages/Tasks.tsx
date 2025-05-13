@@ -1,26 +1,43 @@
 import { Button } from "primereact/button";
 import { Card } from "primereact/card";
+import { TabPanel, TabView } from "primereact/tabview";
 import { Toast } from "primereact/toast";
 import { useRef, useState } from "react";
 import { useTaskContext } from "../GlobalProvider/TaskContext";
+import { useAuth } from "../GlobalProvider/useData/AuthContext";
 import { TaskForm } from "../Task/TaskForm";
 import { TaskList } from "../Task/TaskList";
 import { Task, TaskFormData } from "../Task/types";
 
 const Tasks = () => {
-  const { tasks, addTask, updateTask, deleteTask, toggleTaskStatus } =
-    useTaskContext();
+  const {
+    tasks,
+    addTask,
+    updateTask,
+    deleteTask,
+    toggleTaskStatus,
+    getMyTasks,
+    getAssignedTasks,
+    getAllTasks,
+  } = useTaskContext();
+  const { currentUser, isAdmin } = useAuth();
   const [visible, setVisible] = useState(false);
   const [formData, setFormData] = useState<TaskFormData>({
     title: "",
     status: "pending",
+    description: "",
   });
   const [editMode, setEditMode] = useState(false);
   const [editTaskId, setEditTaskId] = useState<number | null>(null);
   const toast = useRef<Toast>(null);
 
   const handleEdit = (task: Task) => {
-    setFormData({ title: task.title, status: task.status });
+    setFormData({
+      title: task.title,
+      status: task.status,
+      description: task.description,
+      assignedTo: task.assignedTo,
+    });
     setEditTaskId(task.id);
     setEditMode(true);
     setVisible(true);
@@ -58,18 +75,29 @@ const Tasks = () => {
       });
       return false;
     }
+
+    if (!formData.assignedTo) {
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Please select a user to assign the task",
+        life: 3000,
+      });
+      return false;
+    }
     return true;
   };
 
   const handleSubmit = () => {
     if (!validateTask()) return;
 
-    if (editMode && editTaskId !== null) {
+    if (editMode && editTaskId) {
       updateTask({
         id: editTaskId,
-        title: formData.title,
-        status: formData.status,
+        ...formData,
         createdAt: new Date(),
+        createdBy: currentUser?.id || 0,
+        assignedTo: formData.assignedTo || 0,
       });
       toast.current?.show({
         severity: "success",
@@ -79,8 +107,8 @@ const Tasks = () => {
       });
     } else {
       addTask({
-        title: formData.title,
-        status: formData.status,
+        ...formData,
+        assignedTo: formData.assignedTo || 0,
       });
       toast.current?.show({
         severity: "success",
@@ -90,66 +118,89 @@ const Tasks = () => {
       });
     }
 
-    handleDialogClose();
-  };
-
-  const handleDialogClose = () => {
     setVisible(false);
-    setFormData({ title: "", status: "pending" });
+    setFormData({ title: "", status: "pending", description: "" });
     setEditMode(false);
     setEditTaskId(null);
   };
 
-  return (
-    <div className="p-4">
-      <Toast ref={toast} />
+  const handleHide = () => {
+    setVisible(false);
+    setFormData({ title: "", status: "pending", description: "" });
+    setEditMode(false);
+    setEditTaskId(null);
+  };
+
+  if (!currentUser) {
+    return (
       <Card>
-        <div className="flex justify-content-between align-items-center mb-4">
-          <h2 className="m-0">Tasks</h2>
+        <div className="flex align-items-center justify-content-center">
+          <h2>Please log in to view tasks</h2>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="card">
+      <Toast ref={toast} />
+      <div className="flex justify-content-between align-items-center mb-4">
+        <h1 className="m-0">Task Management</h1>
+        {isAdmin() && (
           <Button
-            label="Add Task"
+            label="Create Task"
             icon="pi pi-plus"
             onClick={() => setVisible(true)}
+            severity="success"
           />
-        </div>
+        )}
+      </div>
 
-        <TaskList
-          tasks={tasks}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onStatusToggle={handleStatusToggle}
-        />
-      </Card>
+      <TabView>
+        <TabPanel header={isAdmin() ? "Created Tasks" : "My Tasks"}>
+          <Card>
+            <TaskList
+              tasks={getMyTasks()}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onStatusToggle={handleStatusToggle}
+            />
+          </Card>
+        </TabPanel>
+        {!isAdmin() && (
+          <TabPanel header="Assigned to Me">
+            <Card>
+              <TaskList
+                tasks={getAssignedTasks()}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onStatusToggle={handleStatusToggle}
+              />
+            </Card>
+          </TabPanel>
+        )}
+        {isAdmin() && (
+          <TabPanel header="All Tasks">
+            <Card>
+              <TaskList
+                tasks={getAllTasks()}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onStatusToggle={handleStatusToggle}
+              />
+            </Card>
+          </TabPanel>
+        )}
+      </TabView>
 
       <TaskForm
         visible={visible}
-        onHide={handleDialogClose}
+        onHide={handleHide}
         onSubmit={handleSubmit}
         formData={formData}
         onChange={setFormData}
         isEditMode={editMode}
       />
-
-      <style>
-        {`
-          .status-badge {
-            padding: 0.5rem;
-            border-radius: 4px;
-            text-transform: capitalize;
-          }
-          .status-pending {
-            background-color: var(--yellow-100);
-            color: var(--yellow-900);
-          }
-          .status-completed {
-            background-color: var(--green-100);
-            color: var(--green-900);
-          }
-          .p-column-filter {
-            width: 100%;
-          }
-        `}
-      </style>
     </div>
   );
 };

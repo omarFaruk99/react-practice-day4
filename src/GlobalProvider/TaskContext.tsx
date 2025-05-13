@@ -6,13 +6,18 @@ import {
   useState,
 } from "react";
 import { Task } from "../Task/types";
+import { useAuth } from "./useData/AuthContext";
 
 interface TaskContextType {
   tasks: Task[];
-  addTask: (task: Omit<Task, "id" | "createdAt">) => void;
+  addTask: (task: Omit<Task, "id" | "createdAt" | "createdBy">) => void;
   updateTask: (task: Task) => void;
   deleteTask: (id: number) => void;
   toggleTaskStatus: (task: Task) => void;
+  getMyTasks: () => Task[];
+  getAssignedTasks: () => Task[];
+  getAllTasks: () => Task[];
+  canCreateTasks: boolean;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -30,6 +35,7 @@ interface TaskProviderProps {
 }
 
 export const TaskProvider = ({ children }: TaskProviderProps) => {
+  const { currentUser, isAdmin } = useAuth();
   const [tasks, setTasks] = useState<Task[]>(() => {
     try {
       const savedTasks = localStorage.getItem("tasks");
@@ -55,36 +61,102 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
     }
   }, [tasks]);
 
-  const addTask = (taskData: Omit<Task, "id" | "createdAt">) => {
+  const addTask = (taskData: Omit<Task, "id" | "createdAt" | "createdBy">) => {
+    if (!currentUser) {
+      console.error("Must be logged in to add tasks");
+      return;
+    }
+
+    if (!isAdmin()) {
+      console.error("Only administrators can create tasks");
+      return;
+    }
+
     const newTask: Task = {
       ...taskData,
       id: Date.now(),
       createdAt: new Date(),
+      createdBy: currentUser.id,
     };
     setTasks((prevTasks) => [...prevTasks, newTask]);
   };
 
   const updateTask = (updatedTask: Task) => {
+    if (!currentUser) {
+      console.error("Must be logged in to update tasks");
+      return;
+    }
+
+    // Allow admin to update any task
+    if (!isAdmin() && updatedTask.assignedTo !== currentUser.id) {
+      console.error("You can only update tasks assigned to you");
+      return;
+    }
+
     setTasks((prevTasks) =>
       prevTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
     );
   };
 
   const deleteTask = (id: number) => {
+    if (!currentUser) {
+      console.error("Must be logged in to delete tasks");
+      return;
+    }
+
+    if (!isAdmin()) {
+      console.error("Only administrators can delete tasks");
+      return;
+    }
+
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
   };
 
   const toggleTaskStatus = (task: Task) => {
+    if (!currentUser) {
+      console.error("Must be logged in to update task status");
+      return;
+    }
+
+    // Allow admin to toggle any task status
+    if (!isAdmin() && task.assignedTo !== currentUser.id) {
+      console.error("You can only update status of tasks assigned to you");
+      return;
+    }
+
     const newStatus = task.status === "completed" ? "pending" : "completed";
     updateTask({ ...task, status: newStatus });
   };
 
+  const getMyTasks = () => {
+    if (!currentUser) return [];
+    // For admin, show created tasks. For users, show assigned tasks
+    return isAdmin()
+      ? tasks.filter((task) => task.createdBy === currentUser.id)
+      : tasks.filter((task) => task.assignedTo === currentUser.id);
+  };
+
+  const getAssignedTasks = () => {
+    if (!currentUser) return [];
+    return tasks.filter((task) => task.assignedTo === currentUser.id);
+  };
+
+  const getAllTasks = () => {
+    if (!currentUser) return [];
+    // Only admin can see all tasks
+    return isAdmin() ? tasks : [];
+  };
+
   const value = {
-    tasks,
+    tasks: currentUser ? tasks : [],
     addTask,
     updateTask,
     deleteTask,
     toggleTaskStatus,
+    getMyTasks,
+    getAssignedTasks,
+    getAllTasks,
+    canCreateTasks: isAdmin(),
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

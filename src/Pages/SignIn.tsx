@@ -3,10 +3,9 @@ import { Card } from "primereact/card";
 import { InputText } from "primereact/inputtext";
 import { Password } from "primereact/password";
 import { Toast } from "primereact/toast";
-import React, { useContext, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../GlobalProvider/GlobalProvider";
-import useStore from "../layout/useStore";
+import { useAuth } from "../GlobalProvider/useData/AuthContext";
 
 const SignIn: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -16,8 +15,7 @@ const SignIn: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const toast = useRef<Toast>(null);
-  const { data } = useContext(AuthContext);
-  const { setCurrentUser } = useStore().data;
+  const { setCurrentUser } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,24 +37,22 @@ const SignIn: React.FC = () => {
         throw new Error("User not found");
       }
 
-      // Verify password (using the same basic encoding as signup)
-      if (btoa(formData.password) !== user.password) {
-        throw new Error("Invalid password");
+      // Check if it's admin login
+      if (user.role === "admin") {
+        const adminPassword = localStorage.getItem("adminPassword");
+        if (btoa(formData.password) !== adminPassword) {
+          throw new Error("Invalid password");
+        }
+      } else {
+        // Regular user login
+        if (btoa(formData.password) !== user.password) {
+          throw new Error("Invalid password");
+        }
       }
 
-      // Create user session
-      const userSession = {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      };
-
       // Store user session in localStorage and global state
-      localStorage.setItem("currentUser", JSON.stringify(userSession));
-      setCurrentUser(userSession);
-
-      // Set access token (as per your existing context structure)
-      data.setAccessToken(btoa(user.email)); // Using email as base64 token for demo
+      localStorage.setItem("currentUser", JSON.stringify(user));
+      setCurrentUser(user);
 
       toast.current?.show({
         severity: "success",
@@ -65,9 +61,9 @@ const SignIn: React.FC = () => {
         life: 3000,
       });
 
-      // Redirect to profile page
+      // Redirect to tasks page
       setTimeout(() => {
-        navigate("/profile");
+        navigate("/tasks");
       }, 1500);
     } catch (error: any) {
       toast.current?.show({
@@ -115,7 +111,7 @@ const SignIn: React.FC = () => {
                   setFormData({ ...formData, password: e.target.value })
                 }
                 toggleMask
-                feedback={false}
+                feedback={true}
                 className="w-full"
               />
               <label htmlFor="password">Password</label>

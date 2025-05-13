@@ -1,13 +1,15 @@
 import { Button } from "primereact/button";
 import { Card } from "primereact/card";
 import { Toast } from "primereact/toast";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useTaskContext } from "../GlobalProvider/TaskContext";
 import { TaskForm } from "../Task/TaskForm";
 import { TaskList } from "../Task/TaskList";
 import { Task, TaskFormData } from "../Task/types";
 
 const Tasks = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const { tasks, addTask, updateTask, deleteTask, toggleTaskStatus } =
+    useTaskContext();
   const [visible, setVisible] = useState(false);
   const [formData, setFormData] = useState<TaskFormData>({
     title: "",
@@ -17,23 +19,6 @@ const Tasks = () => {
   const [editTaskId, setEditTaskId] = useState<number | null>(null);
   const toast = useRef<Toast>(null);
 
-  // Load tasks from localStorage on component mount
-  useEffect(() => {
-    const savedTasks = localStorage.getItem("tasks");
-    if (savedTasks) {
-      const parsedTasks = JSON.parse(savedTasks).map((task: any) => ({
-        ...task,
-        createdAt: new Date(task.createdAt),
-      }));
-      setTasks(parsedTasks);
-    }
-  }, []);
-
-  // Save tasks to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
-
   const handleEdit = (task: Task) => {
     setFormData({ title: task.title, status: task.status });
     setEditTaskId(task.id);
@@ -42,7 +27,7 @@ const Tasks = () => {
   };
 
   const handleDelete = (id: number) => {
-    setTasks(tasks.filter((task) => task.id !== id));
+    deleteTask(id);
     toast.current?.show({
       severity: "success",
       summary: "Task Deleted",
@@ -52,14 +37,7 @@ const Tasks = () => {
   };
 
   const handleStatusToggle = (task: Task) => {
-    const updatedTasks = tasks.map((t) => {
-      if (t.id === task.id) {
-        const newStatus = t.status === "completed" ? "pending" : "completed";
-        return { ...t, status: newStatus };
-      }
-      return t;
-    });
-    setTasks(updatedTasks);
+    toggleTaskStatus(task);
     toast.current?.show({
       severity: "success",
       summary: "Task Updated",
@@ -87,12 +65,12 @@ const Tasks = () => {
     if (!validateTask()) return;
 
     if (editMode && editTaskId !== null) {
-      const updatedTasks = tasks.map((task) =>
-        task.id === editTaskId
-          ? { ...task, title: formData.title, status: formData.status }
-          : task
-      );
-      setTasks(updatedTasks);
+      updateTask({
+        id: editTaskId,
+        title: formData.title,
+        status: formData.status,
+        createdAt: new Date(),
+      });
       toast.current?.show({
         severity: "success",
         summary: "Task Updated",
@@ -100,13 +78,10 @@ const Tasks = () => {
         life: 3000,
       });
     } else {
-      const task: Task = {
-        id: tasks.length + 1,
+      addTask({
         title: formData.title,
         status: formData.status,
-        createdAt: new Date(),
-      };
-      setTasks([...tasks, task]);
+      });
       toast.current?.show({
         severity: "success",
         summary: "Task Added",

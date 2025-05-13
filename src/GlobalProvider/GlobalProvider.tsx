@@ -1,4 +1,5 @@
 import { createContext } from "react";
+import { TaskProvider } from "./TaskContext";
 import useData from "./useData/useData";
 
 interface AuthContextType {
@@ -29,7 +30,9 @@ export const AuthContext = createContext<AuthContextType>(
 const GlobalProvider = ({ children }: any) => {
   const data = useData();
   return (
-    <AuthContext.Provider value={{ data }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ data }}>
+      <TaskProvider>{children}</TaskProvider>
+    </AuthContext.Provider>
   );
 };
 

@@ -5,12 +5,19 @@ export interface Task {
   createdAt: Date;
   createdBy: number; // ID of the user who created the task
   assignedTo: number; // ID of the user the task is assigned to
-  description?: string;
+  description: string;
 }
 
 export interface TaskFormData {
   title: string;
   status: string;
+  description: string;
   assignedTo?: number;
-  description?: string;
+}
+
+export interface TaskFormState {
+  title: string;
+  status: string;
+  description: string;
+  assignedTo?: number;
 }

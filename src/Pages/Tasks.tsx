@@ -7,7 +7,7 @@ import { useTaskContext } from "../GlobalProvider/TaskContext";
 import { useAuth } from "../GlobalProvider/useData/AuthContext";
 import { TaskForm } from "../Task/TaskForm";
 import { TaskList } from "../Task/TaskList";
-import { Task, TaskFormData } from "../Task/types";
+import { Task, TaskFormState } from "../Task/types";
 
 const Tasks = () => {
   const {
@@ -17,12 +17,11 @@ const Tasks = () => {
     deleteTask,
     toggleTaskStatus,
     getMyTasks,
-    getAssignedTasks,
     getAllTasks,
   } = useTaskContext();
   const { currentUser, isAdmin } = useAuth();
   const [visible, setVisible] = useState(false);
-  const [formData, setFormData] = useState<TaskFormData>({
+  const [formData, setFormData] = useState<TaskFormState>({
     title: "",
     status: "pending",
     description: "",
@@ -35,7 +34,7 @@ const Tasks = () => {
     setFormData({
       title: task.title,
       status: task.status,
-      description: task.description,
+      description: task.description || "",
       assignedTo: task.assignedTo,
     });
     setEditTaskId(task.id);
@@ -91,13 +90,18 @@ const Tasks = () => {
   const handleSubmit = () => {
     if (!validateTask()) return;
 
+    const taskData = {
+      ...formData,
+      description: formData.description || "",
+      assignedTo: formData.assignedTo || 0,
+    };
+
     if (editMode && editTaskId) {
       updateTask({
         id: editTaskId,
-        ...formData,
+        ...taskData,
         createdAt: new Date(),
         createdBy: currentUser?.id || 0,
-        assignedTo: formData.assignedTo || 0,
       });
       toast.current?.show({
         severity: "success",
@@ -106,10 +110,7 @@ const Tasks = () => {
         life: 3000,
       });
     } else {
-      addTask({
-        ...formData,
-        assignedTo: formData.assignedTo || 0,
-      });
+      addTask(taskData);
       toast.current?.show({
         severity: "success",
         summary: "Task Added",
@@ -118,13 +119,6 @@ const Tasks = () => {
       });
     }
 
-    setVisible(false);
-    setFormData({ title: "", status: "pending", description: "" });
-    setEditMode(false);
-    setEditTaskId(null);
-  };
-
-  const handleHide = () => {
     setVisible(false);
     setFormData({ title: "", status: "pending", description: "" });
     setEditMode(false);
@@ -157,7 +151,7 @@ const Tasks = () => {
       </div>
 
       <TabView>
-        <TabPanel header={isAdmin() ? "Created Tasks" : "My Tasks"}>
+        <TabPanel header="My Tasks">
           <Card>
             <TaskList
               tasks={getMyTasks()}
@@ -167,18 +161,6 @@ const Tasks = () => {
             />
           </Card>
         </TabPanel>
-        {!isAdmin() && (
-          <TabPanel header="Assigned to Me">
-            <Card>
-              <TaskList
-                tasks={getAssignedTasks()}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onStatusToggle={handleStatusToggle}
-              />
-            </Card>
-          </TabPanel>
-        )}
         {isAdmin() && (
           <TabPanel header="All Tasks">
             <Card>
@@ -195,10 +177,15 @@ const Tasks = () => {
 
       <TaskForm
         visible={visible}
-        onHide={handleHide}
+        onHide={() => {
+          setVisible(false);
+          setFormData({ title: "", status: "pending", description: "" });
+          setEditMode(false);
+          setEditTaskId(null);
+        }}
         onSubmit={handleSubmit}
         formData={formData}
-        onChange={setFormData}
+        onChange={(data: TaskFormState) => setFormData(data)}
         isEditMode={editMode}
       />
     </div>

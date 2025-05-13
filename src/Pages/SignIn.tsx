@@ -6,7 +6,6 @@ import { Toast } from "primereact/toast";
 import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../GlobalProvider/useData/AuthContext";
-import useStore from "../layout/useStore";
 
 const SignIn: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -17,7 +16,6 @@ const SignIn: React.FC = () => {
   const navigate = useNavigate();
   const toast = useRef<Toast>(null);
   const { setCurrentUser } = useAuth();
-  const { setCurrentUser: setStoreUser, setAccessToken } = useStore().data;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,11 +50,9 @@ const SignIn: React.FC = () => {
         }
       }
 
-      // Store user session in localStorage and global states
+      // Store user session in localStorage and global state
       localStorage.setItem("currentUser", JSON.stringify(user));
       setCurrentUser(user);
-      setStoreUser(user);
-      setAccessToken(btoa(user.email)); // Set access token for the store
 
       toast.current?.show({
         severity: "success",

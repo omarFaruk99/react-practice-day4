@@ -5,6 +5,7 @@ import Home from "../Pages/Home";
 import ProfilePage from "../Pages/ProfilePage";
 import SignIn from "../Pages/SignIn";
 import SignUp from "../Pages/SignUp";
+import Tasks from "../Pages/Tasks";
 
 export const router: any = createBrowserRouter([
   {
@@ -27,6 +28,10 @@ export const router: any = createBrowserRouter([
       {
         path: "/profile",
         element: <ProfilePage />,
+      },
+      {
+        path: "/tasks",
+        element: <Tasks />,
       },
     ],
   },

@@ -4,6 +4,7 @@ import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import { useEffect, useState } from "react";
+import { useAuth } from "../GlobalProvider/useData/AuthContext";
 import { TaskFormData } from "./types";
 
 interface TaskFormProps {
@@ -30,6 +31,7 @@ export const TaskForm = ({
   isEditMode,
 }: TaskFormProps) => {
   const [users, setUsers] = useState<User[]>([]);
+  const { currentUser, isAdmin } = useAuth();
 
   useEffect(() => {
     // Load users from localStorage
@@ -82,18 +84,20 @@ export const TaskForm = ({
         />
       </div>
 
-      <div className="field">
-        <label htmlFor="assignedTo">Assign To</label>
-        <Dropdown
-          id="assignedTo"
-          value={formData.assignedTo}
-          options={users}
-          onChange={(e) => onChange({ ...formData, assignedTo: e.value })}
-          optionLabel="name"
-          optionValue="id"
-          placeholder="Select a User"
-        />
-      </div>
+      {isAdmin() && (
+        <div className="field">
+          <label htmlFor="assignedTo">Assign To</label>
+          <Dropdown
+            id="assignedTo"
+            value={formData.assignedTo}
+            options={users}
+            onChange={(e) => onChange({ ...formData, assignedTo: e.value })}
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Select a User"
+          />
+        </div>
+      )}
 
       <div className="flex justify-content-end">
         <Button

@@ -1,4 +1,5 @@
 import { Button } from "primereact/button";
+import { useAuth } from "../GlobalProvider/useData/AuthContext";
 import { Task } from "./types";
 
 interface TaskItemProps {
@@ -14,6 +15,11 @@ export const TaskItem = ({
   onDelete,
   onStatusToggle,
 }: TaskItemProps) => {
+  const { currentUser, isAdmin } = useAuth();
+
+  // Check if the user can delete this task
+  const canDelete = isAdmin() || task.assignedTo === currentUser?.id;
+
   return (
     <div className="flex gap-2">
       <Button
@@ -23,13 +29,15 @@ export const TaskItem = ({
         severity="info"
         onClick={() => onEdit(task)}
       />
-      <Button
-        icon="pi pi-trash"
-        rounded
-        text
-        severity="danger"
-        onClick={() => onDelete(task.id)}
-      />
+      {canDelete && (
+        <Button
+          icon="pi pi-trash"
+          rounded
+          text
+          severity="danger"
+          onClick={() => onDelete(task.id)}
+        />
+      )}
       <Button
         icon={`pi pi-${task.status === "completed" ? "refresh" : "check"}`}
         rounded

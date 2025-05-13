@@ -3,9 +3,15 @@ import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
 import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TaskItem } from "./TaskItem";
 import { Task } from "./types";
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
 
 interface TaskListProps {
   tasks: Task[];
@@ -23,9 +29,19 @@ export const TaskList = ({
   const [filters, setFilters] = useState<DataTableFilterMeta>({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     status: { value: null, matchMode: FilterMatchMode.EQUALS },
+    assignedTo: { value: null, matchMode: FilterMatchMode.EQUALS },
   });
 
+  const [users, setUsers] = useState<User[]>([]);
   const statuses = ["pending", "completed"];
+
+  useEffect(() => {
+    // Load users from localStorage
+    const savedUsers = localStorage.getItem("users");
+    if (savedUsers) {
+      setUsers(JSON.parse(savedUsers));
+    }
+  }, []);
 
   const statusBodyTemplate = (rowData: Task) => {
     return (
@@ -43,6 +59,11 @@ export const TaskList = ({
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const assignedToBodyTemplate = (rowData: Task) => {
+    const assignedUser = users.find((user) => user.id === rowData.assignedTo);
+    return assignedUser ? assignedUser.name : "Unassigned";
   };
 
   const actionBodyTemplate = (rowData: Task) => {
@@ -68,6 +89,20 @@ export const TaskList = ({
     );
   };
 
+  const assignedToFilterTemplate = (options: any) => {
+    return (
+      <Dropdown
+        value={options.value}
+        options={users}
+        onChange={(e) => options.filterCallback(e.value, options.index)}
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Select a User"
+        className="p-column-filter"
+      />
+    );
+  };
+
   return (
     <DataTable
       value={tasks}
@@ -75,7 +110,7 @@ export const TaskList = ({
       rows={10}
       filters={filters}
       filterDisplay="menu"
-      globalFilterFields={["title", "status"]}
+      globalFilterFields={["title", "status", "assignedTo"]}
       emptyMessage="No tasks found"
       className="p-datatable-sm"
       header={
@@ -112,6 +147,14 @@ export const TaskList = ({
         sortable
         filter
         filterElement={statusFilterTemplate}
+      />
+      <Column
+        field="assignedTo"
+        header="Assigned To"
+        body={assignedToBodyTemplate}
+        sortable
+        filter
+        filterElement={assignedToFilterTemplate}
       />
       <Column
         field="createdAt"

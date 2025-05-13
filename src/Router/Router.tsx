@@ -6,6 +6,7 @@ import ProfilePage from "../Pages/ProfilePage";
 import SignIn from "../Pages/SignIn";
 import SignUp from "../Pages/SignUp";
 import Tasks from "../Pages/Tasks";
+import { ProtectedRoute } from "./ProtectedRoute";
 
 export const router: any = createBrowserRouter([
   {
@@ -15,7 +16,11 @@ export const router: any = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <Home />,
+        element: (
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/signup",
@@ -27,11 +32,19 @@ export const router: any = createBrowserRouter([
       },
       {
         path: "/profile",
-        element: <ProfilePage />,
+        element: (
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/tasks",
-        element: <Tasks />,
+        element: (
+          <ProtectedRoute adminOnly>
+            <Tasks />
+          </ProtectedRoute>
+        ),
       },
     ],
   },

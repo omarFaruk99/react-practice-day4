@@ -104,8 +104,16 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
       return;
     }
 
-    if (!isAdmin()) {
-      console.error("Only administrators can delete tasks");
+    // Find the task to check ownership
+    const taskToDelete = tasks.find((task) => task.id === id);
+    if (!taskToDelete) {
+      console.error("Task not found");
+      return;
+    }
+
+    // Allow deletion if user is admin or if the task is assigned to them
+    if (!isAdmin() && taskToDelete.assignedTo !== currentUser.id) {
+      console.error("You can only delete tasks assigned to you");
       return;
     }
 

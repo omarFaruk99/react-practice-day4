@@ -1,33 +1,21 @@
-import { FilterMatchMode } from "primereact/api";
 import { Button } from "primereact/button";
 import { Card } from "primereact/card";
-import { Column } from "primereact/column";
-import { DataTable, DataTableFilterMeta } from "primereact/datatable";
-import { Dialog } from "primereact/dialog";
-import { Dropdown } from "primereact/dropdown";
-import { InputText } from "primereact/inputtext";
 import { Toast } from "primereact/toast";
 import { useEffect, useRef, useState } from "react";
-
-interface Task {
-  id: number;
-  title: string;
-  status: string;
-  createdAt: Date;
-}
+import { TaskForm } from "../Task/TaskForm";
+import { TaskList } from "../Task/TaskList";
+import { Task, TaskFormData } from "../Task/types";
 
 const Tasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [visible, setVisible] = useState(false);
-  const [newTask, setNewTask] = useState({ title: "", status: "pending" });
+  const [formData, setFormData] = useState<TaskFormData>({
+    title: "",
+    status: "pending",
+  });
   const [editMode, setEditMode] = useState(false);
   const [editTaskId, setEditTaskId] = useState<number | null>(null);
-  const [filters, setFilters] = useState<DataTableFilterMeta>({
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    status: { value: null, matchMode: FilterMatchMode.EQUALS },
-  });
   const toast = useRef<Toast>(null);
-  const statuses = ["pending", "completed"];
 
   // Load tasks from localStorage on component mount
   useEffect(() => {
@@ -46,53 +34,24 @@ const Tasks = () => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
 
-  const statusBodyTemplate = (rowData: Task) => {
-    return (
-      <span className={`status-badge status-${rowData.status.toLowerCase()}`}>
-        {rowData.status}
-      </span>
-    );
+  const handleEdit = (task: Task) => {
+    setFormData({ title: task.title, status: task.status });
+    setEditTaskId(task.id);
+    setEditMode(true);
+    setVisible(true);
   };
 
-  const dateBodyTemplate = (rowData: Task) => {
-    return new Date(rowData.createdAt).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+  const handleDelete = (id: number) => {
+    setTasks(tasks.filter((task) => task.id !== id));
+    toast.current?.show({
+      severity: "success",
+      summary: "Task Deleted",
+      detail: "Task has been deleted successfully",
+      life: 3000,
     });
   };
 
-  const actionBodyTemplate = (rowData: Task) => {
-    return (
-      <div className="flex gap-2">
-        <Button
-          icon="pi pi-pencil"
-          rounded
-          text
-          severity="info"
-          onClick={() => handleEdit(rowData)}
-        />
-        <Button
-          icon="pi pi-trash"
-          rounded
-          text
-          severity="danger"
-          onClick={() => handleDelete(rowData.id)}
-        />
-        <Button
-          icon={`pi pi-${rowData.status === "completed" ? "refresh" : "check"}`}
-          rounded
-          text
-          severity={rowData.status === "completed" ? "warning" : "success"}
-          onClick={() => toggleTaskStatus(rowData)}
-        />
-      </div>
-    );
-  };
-
-  const toggleTaskStatus = (task: Task) => {
+  const handleStatusToggle = (task: Task) => {
     const updatedTasks = tasks.map((t) => {
       if (t.id === task.id) {
         const newStatus = t.status === "completed" ? "pending" : "completed";
@@ -111,25 +70,8 @@ const Tasks = () => {
     });
   };
 
-  const handleEdit = (task: Task) => {
-    setNewTask({ title: task.title, status: task.status });
-    setEditTaskId(task.id);
-    setEditMode(true);
-    setVisible(true);
-  };
-
-  const handleDelete = (id: number) => {
-    setTasks(tasks.filter((task) => task.id !== id));
-    toast.current?.show({
-      severity: "success",
-      summary: "Task Deleted",
-      detail: "Task has been deleted successfully",
-      life: 3000,
-    });
-  };
-
   const validateTask = () => {
-    if (!newTask.title.trim()) {
+    if (!formData.title.trim()) {
       toast.current?.show({
         severity: "error",
         summary: "Error",
@@ -141,13 +83,13 @@ const Tasks = () => {
     return true;
   };
 
-  const handleAdd = () => {
+  const handleSubmit = () => {
     if (!validateTask()) return;
 
     if (editMode && editTaskId !== null) {
       const updatedTasks = tasks.map((task) =>
         task.id === editTaskId
-          ? { ...task, title: newTask.title, status: newTask.status }
+          ? { ...task, title: formData.title, status: formData.status }
           : task
       );
       setTasks(updatedTasks);
@@ -160,8 +102,8 @@ const Tasks = () => {
     } else {
       const task: Task = {
         id: tasks.length + 1,
-        title: newTask.title,
-        status: newTask.status,
+        title: formData.title,
+        status: formData.status,
         createdAt: new Date(),
       };
       setTasks([...tasks, task]);
@@ -178,21 +120,9 @@ const Tasks = () => {
 
   const handleDialogClose = () => {
     setVisible(false);
-    setNewTask({ title: "", status: "pending" });
+    setFormData({ title: "", status: "pending" });
     setEditMode(false);
     setEditTaskId(null);
-  };
-
-  const statusFilterTemplate = (options: any) => {
-    return (
-      <Dropdown
-        value={options.value}
-        options={statuses}
-        onChange={(e) => options.filterCallback(e.value, options.index)}
-        placeholder="Select a Status"
-        className="p-column-filter"
-      />
-    );
   };
 
   return (
@@ -208,95 +138,22 @@ const Tasks = () => {
           />
         </div>
 
-        <DataTable
-          value={tasks}
-          paginator
-          rows={10}
-          filters={filters}
-          filterDisplay="menu"
-          globalFilterFields={["title", "status"]}
-          emptyMessage="No tasks found"
-          className="p-datatable-sm"
-          header={
-            <div className="flex justify-content-end">
-              <span className="p-input-icon-left">
-                <i className="pi pi-search" />
-                <InputText
-                  onInput={(e) =>
-                    setFilters({
-                      ...filters,
-                      global: {
-                        value: (e.target as HTMLInputElement).value,
-                        matchMode: FilterMatchMode.CONTAINS,
-                      },
-                    })
-                  }
-                  placeholder="Search tasks..."
-                />
-              </span>
-            </div>
-          }
-        >
-          <Column
-            field="title"
-            header="Title"
-            sortable
-            filter
-            filterPlaceholder="Search by title"
-          />
-          <Column
-            field="status"
-            header="Status"
-            body={statusBodyTemplate}
-            sortable
-            filter
-            filterElement={statusFilterTemplate}
-          />
-          <Column
-            field="createdAt"
-            header="Created At"
-            sortable
-            body={dateBodyTemplate}
-          />
-          <Column
-            body={actionBodyTemplate}
-            header="Actions"
-            style={{ width: "12rem" }}
-          />
-        </DataTable>
+        <TaskList
+          tasks={tasks}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onStatusToggle={handleStatusToggle}
+        />
       </Card>
 
-      <Dialog
+      <TaskForm
         visible={visible}
         onHide={handleDialogClose}
-        header={editMode ? "Edit Task" : "Add New Task"}
-        modal
-        className="p-fluid"
-      >
-        <div className="flex flex-column gap-3 pt-3">
-          <div className="field">
-            <label htmlFor="title">Title</label>
-            <InputText
-              id="title"
-              value={newTask.title}
-              onChange={(e) =>
-                setNewTask({ ...newTask, title: e.target.value })
-              }
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="status">Status</label>
-            <Dropdown
-              id="status"
-              value={newTask.status}
-              options={statuses}
-              onChange={(e) => setNewTask({ ...newTask, status: e.value })}
-              placeholder="Select a Status"
-            />
-          </div>
-          <Button label={editMode ? "Update" : "Add"} onClick={handleAdd} />
-        </div>
-      </Dialog>
+        onSubmit={handleSubmit}
+        formData={formData}
+        onChange={setFormData}
+        isEditMode={editMode}
+      />
 
       <style>
         {`

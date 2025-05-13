@@ -1,6 +1,5 @@
 import { Button } from "primereact/button";
 import { Card } from "primereact/card";
-import { TabPanel, TabView } from "primereact/tabview";
 import { Toast } from "primereact/toast";
 import { useRef, useState } from "react";
 import { useTaskContext } from "../GlobalProvider/TaskContext";
@@ -16,7 +15,6 @@ const Tasks = () => {
     updateTask,
     deleteTask,
     toggleTaskStatus,
-    getMyTasks,
     getAllTasks,
   } = useTaskContext();
   const { currentUser, isAdmin } = useAuth();
@@ -84,6 +82,18 @@ const Tasks = () => {
       });
       return false;
     }
+
+    // Prevent admin from assigning task to themselves
+    if (formData.assignedTo === currentUser?.id) {
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Admin cannot assign tasks to themselves",
+        life: 3000,
+      });
+      return false;
+    }
+
     return true;
   };
 
@@ -140,40 +150,30 @@ const Tasks = () => {
       <Toast ref={toast} />
       <div className="flex justify-content-between align-items-center mb-4">
         <h1 className="m-0">Task Management</h1>
-        {isAdmin() && (
-          <Button
-            label="Create Task"
-            icon="pi pi-plus"
-            onClick={() => setVisible(true)}
-            severity="success"
-          />
-        )}
+        <Button
+          label="Create Task"
+          icon="pi pi-plus"
+          onClick={() => setVisible(true)}
+          severity="success"
+        />
       </div>
 
-      <TabView>
-        <TabPanel header="My Tasks">
-          <Card>
-            <TaskList
-              tasks={getMyTasks()}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onStatusToggle={handleStatusToggle}
-            />
-          </Card>
-        </TabPanel>
-        {isAdmin() && (
-          <TabPanel header="All Tasks">
-            <Card>
-              <TaskList
-                tasks={getAllTasks()}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onStatusToggle={handleStatusToggle}
-              />
-            </Card>
-          </TabPanel>
-        )}
-      </TabView>
+      <Card>
+        <div className="flex justify-content-between align-items-center mb-3">
+          <h2 className="m-0 text-xl">All Tasks</h2>
+          {getAllTasks().length > 0 && (
+            <span className="text-500">
+              Showing {getAllTasks().length} task(s)
+            </span>
+          )}
+        </div>
+        <TaskList
+          tasks={getAllTasks()}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onStatusToggle={handleStatusToggle}
+        />
+      </Card>
 
       <TaskForm
         visible={visible}

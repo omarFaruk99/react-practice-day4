@@ -3,6 +3,7 @@ import { Column } from "primereact/column";
 import { DataTable, DataTableFilterMeta } from "primereact/datatable";
 import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
+import { Tag } from "primereact/tag";
 import { useEffect, useState } from "react";
 import { TaskItem } from "./TaskItem";
 import { Task } from "./types";
@@ -44,10 +45,24 @@ export const TaskList = ({
   }, []);
 
   const statusBodyTemplate = (rowData: Task) => {
+    const getSeverity = (status: string) => {
+      switch (status.toLowerCase()) {
+        case "completed":
+          return "success";
+        case "pending":
+          return "warning";
+        case "in-progress":
+          return "info";
+        default:
+          return null;
+      }
+    };
+
     return (
-      <span className={`status-badge status-${rowData.status.toLowerCase()}`}>
-        {rowData.status}
-      </span>
+      <Tag
+        value={rowData.status.charAt(0).toUpperCase() + rowData.status.slice(1)}
+        severity={getSeverity(rowData.status)}
+      />
     );
   };
 

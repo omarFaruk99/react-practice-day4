@@ -1,12 +1,16 @@
 import { Button } from "primereact/button";
 import { Card } from "primereact/card";
+import { Dialog } from "primereact/dialog";
+import { Dropdown } from "primereact/dropdown";
+import { InputText } from "primereact/inputtext";
+import { InputTextarea } from "primereact/inputtextarea";
 import { Toast } from "primereact/toast";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTaskContext } from "../GlobalProvider/TaskContext";
 import { useAuth } from "../GlobalProvider/useData/AuthContext";
 import { TaskList } from "../Task/TaskList";
-import { Task } from "../Task/types";
+import { Task, TaskFormState } from "../Task/types";
 
 const Home = () => {
   const { currentUser, isAdmin } = useAuth();
@@ -14,11 +18,28 @@ const Home = () => {
     useTaskContext();
   const navigate = useNavigate();
   const toast = useRef<Toast>(null);
+  const [visible, setVisible] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editTaskId, setEditTaskId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<TaskFormState>({
+    title: "",
+    status: "pending",
+    description: "",
+  });
 
   const handleEdit = (task: Task) => {
-    // For admin, navigate to tasks page. For normal users, stay on home
     if (isAdmin()) {
       navigate("/tasks");
+    } else {
+      setFormData({
+        title: task.title,
+        status: task.status,
+        description: task.description || "",
+        assignedTo: task.assignedTo,
+      });
+      setEditTaskId(task.id);
+      setEditMode(true);
+      setVisible(true);
     }
   };
 
@@ -42,6 +63,51 @@ const Home = () => {
       }`,
       life: 3000,
     });
+  };
+
+  const handleSubmit = () => {
+    if (!formData.title.trim()) {
+      toast.current?.show({
+        severity: "error",
+        summary: "Error",
+        detail: "Task title is required",
+        life: 3000,
+      });
+      return;
+    }
+
+    if (editMode && editTaskId) {
+      const originalTask = getMyTasks().find((task) => task.id === editTaskId);
+      if (!originalTask) {
+        toast.current?.show({
+          severity: "error",
+          summary: "Error",
+          detail: "Task not found",
+          life: 3000,
+        });
+        return;
+      }
+
+      updateTask({
+        id: editTaskId,
+        ...formData,
+        createdAt: new Date(),
+        createdBy: currentUser?.id || 0,
+        assignedTo: originalTask.assignedTo,
+        description: formData.description || "",
+      });
+      toast.current?.show({
+        severity: "success",
+        summary: "Task Updated",
+        detail: "Task has been updated successfully",
+        life: 3000,
+      });
+    }
+
+    setVisible(false);
+    setFormData({ title: "", status: "pending", description: "" });
+    setEditMode(false);
+    setEditTaskId(null);
   };
 
   if (!currentUser) {
@@ -97,6 +163,85 @@ const Home = () => {
           onStatusToggle={handleStatusToggle}
         />
       </Card>
+
+      <Dialog
+        visible={visible}
+        style={{ width: "32rem" }}
+        breakpoints={{ "960px": "75vw", "641px": "90vw" }}
+        header={editMode ? "Edit Task" : "Create Task"}
+        modal
+        className="p-fluid"
+        onHide={() => {
+          setVisible(false);
+          setFormData({ title: "", status: "pending", description: "" });
+          setEditMode(false);
+          setEditTaskId(null);
+        }}
+      >
+        <div className="field">
+          <label htmlFor="title" className="font-bold">
+            Title
+          </label>
+          <InputText
+            id="title"
+            value={formData.title}
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
+            required
+            autoFocus
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="description" className="font-bold">
+            Description
+          </label>
+          <InputTextarea
+            id="description"
+            value={formData.description}
+            onChange={(e) =>
+              setFormData({ ...formData, description: e.target.value })
+            }
+            rows={3}
+            cols={20}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="status" className="font-bold">
+            Status
+          </label>
+          <Dropdown
+            id="status"
+            value={formData.status}
+            options={[
+              { label: "Pending", value: "pending" },
+              { label: "In Progress", value: "in-progress" },
+              { label: "Completed", value: "completed" },
+            ]}
+            onChange={(e) => setFormData({ ...formData, status: e.value })}
+            placeholder="Select a Status"
+          />
+        </div>
+        <div className="flex justify-content-end mt-4">
+          <Button
+            label="Cancel"
+            icon="pi pi-times"
+            outlined
+            onClick={() => {
+              setVisible(false);
+              setFormData({ title: "", status: "pending", description: "" });
+              setEditMode(false);
+              setEditTaskId(null);
+            }}
+            className="mr-2"
+          />
+          <Button
+            label={editMode ? "Update" : "Create"}
+            icon="pi pi-check"
+            onClick={handleSubmit}
+          />
+        </div>
+      </Dialog>
     </div>
   );
 };

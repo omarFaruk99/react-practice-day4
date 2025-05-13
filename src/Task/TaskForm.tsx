@@ -20,6 +20,7 @@ interface User {
   id: number;
   name: string;
   email: string;
+  role: string;
 }
 
 export const TaskForm = ({
@@ -34,10 +35,15 @@ export const TaskForm = ({
   const { currentUser, isAdmin } = useAuth();
 
   useEffect(() => {
-    // Load users from localStorage
+    // Load users from localStorage and filter out admin users
     const savedUsers = localStorage.getItem("users");
     if (savedUsers) {
-      setUsers(JSON.parse(savedUsers));
+      const allUsers = JSON.parse(savedUsers);
+      // Only show non-admin users in the dropdown
+      const normalUsers = allUsers.filter(
+        (user: User) => user.role !== "admin"
+      );
+      setUsers(normalUsers);
     }
   }, []);
 
@@ -84,20 +90,18 @@ export const TaskForm = ({
         />
       </div>
 
-      {isAdmin() && (
-        <div className="field">
-          <label htmlFor="assignedTo">Assign To</label>
-          <Dropdown
-            id="assignedTo"
-            value={formData.assignedTo}
-            options={users}
-            onChange={(e) => onChange({ ...formData, assignedTo: e.value })}
-            optionLabel="name"
-            optionValue="id"
-            placeholder="Select a User"
-          />
-        </div>
-      )}
+      <div className="field">
+        <label htmlFor="assignedTo">Assign To</label>
+        <Dropdown
+          id="assignedTo"
+          value={formData.assignedTo}
+          options={users}
+          onChange={(e) => onChange({ ...formData, assignedTo: e.value })}
+          optionLabel="name"
+          optionValue="id"
+          placeholder="Select a User"
+        />
+      </div>
 
       <div className="flex justify-content-end">
         <Button

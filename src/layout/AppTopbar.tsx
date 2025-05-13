@@ -4,12 +4,18 @@ import { Menu } from "primereact/menu";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import type { AppTopbarRef } from "../../types";
+import { useAuth } from "../GlobalProvider/useData/AuthContext";
 import AppBreadcrumb from "./AppBreadCrumb";
 import useStore from "./useStore";
 
 const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
-  const { onMenuToggle, currentUser, setCurrentUser, setAccessToken } =
-    useStore().data;
+  const {
+    onMenuToggle,
+    currentUser,
+    setCurrentUser: setStoreUser,
+    setAccessToken,
+  } = useStore().data;
+  const { logout } = useAuth();
   const menubuttonRef = useRef(null);
   const navigate = useNavigate();
   const menuRef = useRef<Menu>(null);
@@ -21,7 +27,8 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
   const handleLogout = () => {
     localStorage.removeItem("currentUser");
     setAccessToken("");
-    setCurrentUser(null);
+    setStoreUser(null);
+    logout();
     navigate("/signin");
   };
 
@@ -68,6 +75,7 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
           </>
         ) : (
           <div className="flex align-items-center">
+            <span className="mr-2 font-medium">{currentUser.name}</span>
             <div
               className="cursor-pointer"
               onClick={(e) => menuRef.current?.toggle(e)}

@@ -1,6 +1,5 @@
 import { Button } from "primereact/button";
 import { Card } from "primereact/card";
-import { Chart } from "primereact/chart";
 import { Dialog } from "primereact/dialog";
 import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
@@ -12,6 +11,11 @@ import { useTaskContext } from "../GlobalProvider/TaskContext";
 import { useAuth } from "../GlobalProvider/useData/AuthContext";
 import { TaskList } from "../Task/TaskList";
 import { Task, TaskFormState } from "../Task/types";
+import {
+  StatCards,
+  TaskDistributionChart,
+  UserTaskDistribution,
+} from "../components/Statistics";
 
 const Home = () => {
   const { currentUser, isAdmin } = useAuth();
@@ -213,138 +217,12 @@ const Home = () => {
 
       {isAdmin() ? (
         <div className="grid">
-          {/* Statistics Cards */}
-          <div className="col-12 lg:col-6 xl:col-3">
-            <Card className="mb-0">
-              <div className="flex justify-content-between mb-3">
-                <div>
-                  <span className="block text-500 font-medium mb-3">
-                    Total Tasks
-                  </span>
-                  <div className="text-900 font-medium text-xl">
-                    {taskStats.total}
-                  </div>
-                </div>
-                <div
-                  className="flex align-items-center justify-content-center bg-blue-100 border-round"
-                  style={{ width: "2.5rem", height: "2.5rem" }}
-                >
-                  <i className="pi pi-inbox text-blue-500 text-xl" />
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="col-12 lg:col-6 xl:col-3">
-            <Card className="mb-0">
-              <div className="flex justify-content-between mb-3">
-                <div>
-                  <span className="block text-500 font-medium mb-3">
-                    Completed Tasks
-                  </span>
-                  <div className="text-900 font-medium text-xl">
-                    {taskStats.completed}
-                  </div>
-                </div>
-                <div
-                  className="flex align-items-center justify-content-center bg-green-100 border-round"
-                  style={{ width: "2.5rem", height: "2.5rem" }}
-                >
-                  <i className="pi pi-check-circle text-green-500 text-xl" />
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="col-12 lg:col-6 xl:col-3">
-            <Card className="mb-0">
-              <div className="flex justify-content-between mb-3">
-                <div>
-                  <span className="block text-500 font-medium mb-3">
-                    Pending Tasks
-                  </span>
-                  <div className="text-900 font-medium text-xl">
-                    {taskStats.pending}
-                  </div>
-                </div>
-                <div
-                  className="flex align-items-center justify-content-center bg-orange-100 border-round"
-                  style={{ width: "2.5rem", height: "2.5rem" }}
-                >
-                  <i className="pi pi-clock text-orange-500 text-xl" />
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="col-12 lg:col-6 xl:col-3">
-            <Card className="mb-0">
-              <div className="flex justify-content-between mb-3">
-                <div>
-                  <span className="block text-500 font-medium mb-3">
-                    In Progress
-                  </span>
-                  <div className="text-900 font-medium text-xl">
-                    {taskStats.inProgress}
-                  </div>
-                </div>
-                <div
-                  className="flex align-items-center justify-content-center bg-cyan-100 border-round"
-                  style={{ width: "2.5rem", height: "2.5rem" }}
-                >
-                  <i className="pi pi-sync text-cyan-500 text-xl" />
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Charts and User Stats */}
-          <div className="col-12 lg:col-6">
-            <Card title="Task Distribution" className="mb-0">
-              <Chart
-                type="pie"
-                data={chartData}
-                options={chartOptions}
-                className="w-full md:w-30rem"
-              />
-            </Card>
-          </div>
-
-          <div className="col-12 lg:col-6">
-            <Card title="User Task Distribution" className="mb-0">
-              <div className="flex flex-column">
-                {userStats.map((user, index) => (
-                  <div
-                    key={index}
-                    className="flex justify-content-between align-items-center p-3 border-bottom-1 surface-border"
-                  >
-                    <span className="text-900 font-medium">{user.name}</span>
-                    <span className="text-700">{user.taskCount} tasks</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          {/* Recent Tasks */}
-          <div className="col-12">
-            <Card>
-              <div className="flex justify-content-between align-items-center mb-3">
-                <h2 className="m-0 text-xl">Recent Tasks</h2>
-                {getMyTasks().length > 0 && (
-                  <span className="text-500">
-                    Showing {getMyTasks().length} task(s)
-                  </span>
-                )}
-              </div>
-              <TaskList
-                tasks={getMyTasks()}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onStatusToggle={handleStatusToggle}
-              />
-            </Card>
-          </div>
+          <StatCards taskStats={taskStats} />
+          <TaskDistributionChart
+            chartData={chartData}
+            chartOptions={chartOptions}
+          />
+          <UserTaskDistribution userStats={userStats} />
         </div>
       ) : (
         <Card>

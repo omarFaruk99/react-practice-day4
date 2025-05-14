@@ -196,7 +196,9 @@ const Home = () => {
     <div className="card">
       <Toast ref={toast} />
       <div className="flex justify-content-between align-items-center mb-4">
-        <h1 className="m-0">Welcome, {currentUser.name}!</h1>
+        <h1 className="m-0">
+          {isAdmin() ? "Welcome, Admin" : `Welcome, ${currentUser.name}!`}
+        </h1>
         {isAdmin() && (
           <div className="flex gap-2">
             <Button

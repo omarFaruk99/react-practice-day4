@@ -27,8 +27,8 @@ const AppTopbar = forwardRef<AppTopbarRef>((props, ref) => {
   const handleLogout = () => {
     localStorage.removeItem("currentUser");
     setAccessToken("");
-    setStoreUser(null);
-    logout();
+    setStoreUser(null); // Clear store state
+    logout(); // Clear auth context
     navigate("/signin");
   };
 

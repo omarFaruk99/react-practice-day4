@@ -61,9 +61,9 @@ const SignIn: React.FC = () => {
         life: 3000,
       });
 
-      // Redirect to tasks page
+      // Redirect to home page
       setTimeout(() => {
-        navigate("/tasks");
+        navigate("/");
       }, 1500);
     } catch (error: any) {
       toast.current?.show({

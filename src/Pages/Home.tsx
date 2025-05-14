@@ -43,7 +43,13 @@ const Home = () => {
   const [chartData, setChartData] = useState({});
   const [chartOptions, setChartOptions] = useState({});
   const [userStats, setUserStats] = useState<
-    { name: string; taskCount: number }[]
+    {
+      name: string;
+      taskCount: number;
+      completedTasks: number;
+      pendingTasks: number;
+      inProgressTasks: number;
+    }[]
   >([]);
 
   useEffect(() => {
@@ -63,10 +69,19 @@ const Home = () => {
       // Calculate user statistics
       const userTaskCounts = users
         .filter((user: any) => user.role !== "admin")
-        .map((user: any) => ({
-          name: user.name,
-          taskCount: allTasks.filter((t) => t.assignedTo === user.id).length,
-        }))
+        .map((user: any) => {
+          const userTasks = allTasks.filter((t) => t.assignedTo === user.id);
+          return {
+            name: user.name,
+            taskCount: userTasks.length,
+            completedTasks: userTasks.filter((t) => t.status === "completed")
+              .length,
+            pendingTasks: userTasks.filter((t) => t.status === "pending")
+              .length,
+            inProgressTasks: userTasks.filter((t) => t.status === "in-progress")
+              .length,
+          };
+        })
         .sort((a: any, b: any) => b.taskCount - a.taskCount);
       setUserStats(userTaskCounts);
 
